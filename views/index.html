@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Safe PDF Merge!</title>
+  <link rel="shortcut icon" type="image/png" href="images/favicon.png"/>
+  <link href='https://fonts.googleapis.com/css?family=Didact+Gothic' rel='stylesheet' type='text/css'>
+	<link href="css/merge.css" rel="stylesheet">
+</head>
+<body>
+  <div class = "flex-container">
+    <div id ="main-content-container">
+      <div id = "main-content-outer">
+        <div id = "main-content" >
+          <div class = "dropzone">
+            <div class = "dropzone-main-panel">
+              <h1>Safe PDF Merge</h1>
+              <h3>Safely and Securly Merge Your PDFs Online!</h3>
+              <img src="/images/merge.png" alt="Merge Image" />
+              <h2>Drop or Click</h2>
+              <h3>20mb max</h3>
+              <div class="progress">
+                <div class="progress-bar" role="progressbar"></div>
+              </div>
+              <input type="text" id="merge-name" name="merge-name" placeholder="Merged File Name" maxlength="255">
+              <br>
+              <input type="button" id="btn-merge" value="Merge">
+              <input type="button" id="btn-clear" value="Clear Files">
+            </div>
+            <!--<hr class ="hr-vert">-->
+            <div id="pdf-list" class="pdf-list-inactive">
+              <ul id="items">
+                  
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>  
+    </div>
+    <div id="push"></div>
+    <footer>
+      Privacy Policy
+    </footer>  
+  </div>
+  <input type="file" multiple="true" id="clickInput" >
+  <script src="https://code.jquery.com/jquery-2.2.0.min.js"></script>
+  <script src="//cdn.jsdelivr.net/sortable/latest/Sortable.min.js"></script>
+  <script src="js/merge.js"></script>
+</body>
+</html>
