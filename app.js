@@ -19,7 +19,7 @@ var failCallback = function (req, res, next, nextValidRequestDate) {
 
 };
 
-var store = new ExpressBrute.MemoryStore(); // stores state locally, don't use this in production
+var store = new ExpressBrute.MemoryStore();
 var bruteforce = new ExpressBrute(store , {
     freeRetries: 4, //Allow 5 retries before blocking
     minWait: 60*1000,
@@ -33,16 +33,16 @@ var bruteforce = new ExpressBrute(store , {
 
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.set('trust proxy', 1);
+//app.set('trust proxy', 1);
 
 app.get("/", function(req, res){
   res.sendFile(path.join(__dirname, 'views/index.html'));
 });
 
+//Download the merged pdf
 app.get("/download", function(req,res){
     var uuid = req.query.uuid;
     if(!validator.isUUID(uuid,4)){
-        console.error("Not valid UUID: " + uuid);
         logger.error("Not valid UUID: " + uuid);
         if(!res.headersSent){
             res.redirect('/');
@@ -52,32 +52,31 @@ app.get("/download", function(req,res){
     var fileName = req.query.name;
     fileName = fileName.substring(0, 255);
     if(fileName.length <= 0){
-    //   console.log('filename blank');  
       fileName = "merged_document";
     } else if(!validator.isAlphanumeric(fileName)){
-        logger.info("not alpha numeric: " + fileName);
+        logger.info("Not alpha numeric: " + fileName);
         fileName = "merged_document";
     }
-    //, fileName+'.pdf'
-    res.download('merges/' + req.query.uuid + '.pdf', function(err){
-        console.log('uuid:' + req.query.uuid);
+    
+    res.download('merges/' + req.query.uuid + '.pdf', fileName + '.pdf', function(err){
         if(err){
-            logger.error('Stupdid error: ' + err);
+            logger.error(err);
             if(!res.headersSent){
                 res.redirect('/');
             }
             return;
         } 
            
-        //removeFile('merges/' + req.query.uuid + '.pdf');
+        removeFile('merges/' + req.query.uuid + '.pdf');
     });
     
 });
 
+//Upload and merge the pdfs
 app.post('/upload', bruteforce.prevent, function(req, res, next){
     var maxFileSize = 1024*1024*20;
-    
     var busboy = new Busboy({ headers: req.headers, limits: {fileSize: maxFileSize} });
+    
     var bytesExpected = getBytesExpected(req.headers);
     if(bytesExpected > maxFileSize){
         return next(new Error("Anticipating a file of size " + (bytesExpected/(1024*1024)) + " mb. File size is too large"));
@@ -97,15 +96,12 @@ app.post('/upload', bruteforce.prevent, function(req, res, next){
         //If there was no error with another file
         //then save the file
         if(!error){
-            var targetPath = './uploads/' + uuid.v4();
+            var targetPath = './uploads/' + uuid.v4(); 
             files.push(targetPath);
             file.pipe(fs.createWriteStream(targetPath));
             logger.info("Uploading: " + targetPath);
         }
         
-        file.on('end', function() {
-            // console.log( file.path);
-        });
         file.on('limit', function(data) {                                               
             removeFiles(files, next);
             req.unpipe(busboy);
@@ -135,10 +131,14 @@ function removeFile(file, next){
     //check if the file exists first. fs.exists is deprecated
     fs.stat(file, function (err, stats) {
         if (err) {
-           return next(err);
+            logger.error(err);
+            return next(err);
         }
          fs.unlink(file,function(err){
-            if(err) return next(err);
+            if(err) {
+                logger.error(err);
+                return next(err);
+            }
             logger.info(file +': deleted successfully');
         });  
     });
@@ -146,7 +146,6 @@ function removeFile(file, next){
 
 
 function merge(files, req, res, next){
-    console.log('Merging!');
     var pdfMerge = new PDFMerge(files);
     var randName = uuid.v4();
     pdfMerge.asNewFile('merges/'+randName+'.pdf').merge(function(error, filePath) {
@@ -154,9 +153,10 @@ function merge(files, req, res, next){
             removeFiles(files);
             return next(error);
         } 
+        logger.info("Merged pdfs");
         spm_util.saveToDB(req.ip, files.length, randName );
         res.status(201).send(randName);
-        removeFiles(files);
+        removeFiles(files); //Remove the uploaded files
     });
 }
 
@@ -174,7 +174,6 @@ function getBytesExpected(headers) {
 
 //Catch errors and end the response
 app.use(function(err, req, res, next) {
-    console.log(err);
     logger.error(err);
     if(!res.headersSent){
         res.writeHead(500, {'Connection': 'close'});
