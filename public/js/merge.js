@@ -7,22 +7,19 @@
     function addFile(event){
         $('.progress-bar').text('');
         $('.progress-bar').width('0%');
-        var files;
+        var addedFiles;
         if(event.dataTransfer) {
-          files = event.dataTransfer.files;
+          addedFiles = event.dataTransfer.files;
         } else if(event.target) {
-          files = event.target.files;
+          addedFiles = event.target.files;
         }
         
-        var queuedFiles = [];
-         $('.pdf-div').each(function() {
-            var file = $(this).data('file');
-            queuedFiles.push(file);
-        });
+        var queuedFiles = getQueuedFiles();
         
-        var totalFileSize = calcTotalFileSize(files, queuedFiles)
+        var totalFileSize = calcTotalFileSize(queuedFiles);
+		totalFileSize +=  calcTotalFileSize(addedFiles);
         
-        if(validateFiles(files,totalFileSize)) {
+        if(validateFiles(addedFiles,totalFileSize)) {
             var isFirstTime = false;
             if($('#items').children().length <= 0){
                 isFirstTime = true;
@@ -31,14 +28,14 @@
             var totalFileSizeMb = totalFileSize/(1024*1024)
             totalFileSizeMb = +totalFileSizeMb.toFixed(2);
             $('#usedMb').text('Used: ' + totalFileSizeMb + ' mb')
-            for(var i = 0; i < files.length; i++){
+            for(var i = 0; i < addedFiles.length; i++){
                 var pdf_li = $('<li />');
                 $('#items').append(pdf_li);  
                 
                 var pdf_div = $('<div />', { 
                         class: 'pdf-div',
                     });
-                $(pdf_div).data('file', files.item(i));
+                $(pdf_div).data('file', addedFiles.item(i));
                 $(pdf_li).append(pdf_div);   
 
                 var remove_pdf_img = $('<img />', { 
@@ -57,8 +54,8 @@
                 
                 var label = $('<label />', {
                         class: 'custom-file-upload',
-                        text: files[i].name,
-                        title: files[i].name //tooltip
+                        text: addedFiles[i].name,
+                        title: addedFiles[i].name //tooltip
                     });
                 pdf_div.append(label);  
             }
@@ -117,15 +114,22 @@
     
     $('#items').on('click', 'li > .pdf-div > .remove-pdf-image', function(e){
         e.stopPropagation();   
-        if($('#items').children().length <= 1){
+		$(this).parent().parent().remove();
+        if($('#items').children().length < 1){
             $('#pdf-list').toggleClass('pdf-list-active pdf-list-inactive');
         	$('#usedMb').text('');
         	$('#usedMb').css('width', '0');
         	$('.progress-bar').text('');
         	$('.progress-bar').width('0%');
         	$('#merge-name').val('');  
-        }
-        $(this).parent().parent().remove();
+        } else {
+			var queuedFiles = getQueuedFiles();
+			var totalFileSize = calcTotalFileSize(queuedFiles)
+            var totalFileSizeMb = totalFileSize/(1024*1024)
+            totalFileSizeMb = +totalFileSizeMb.toFixed(2);
+            $('#usedMb').text('Used: ' + totalFileSizeMb + ' mb')
+			
+		}
     });
     
     $('#merge-name').click(function(event){
@@ -150,15 +154,11 @@
         $('.progress-bar').text('');
         $('.progress-bar').width('0%');
         var formData = new FormData();
-        var files = [];
-         $('.pdf-div').each(function() {
-            var file = $(this).data('file');
-            files.push(file);
-        });
-        for(var i = 0; i < files.length; i++){
-            formData.append('uploads[]', files[i], files[i].name);
+		var queuedFiles = getQueuedFiles();
+		for(var i = 0; i < queuedFiles.length; i++){
+            formData.append('uploads[]', queuedFiles[i], queuedFiles[i].name);
         } 
-        if ( files.length < 1 ){
+        if ( queuedFiles.length < 1 ){
             alert('No files added!');
             return;
         }
@@ -203,14 +203,21 @@
             }
         });
     });
+	
+	
+	function getQueuedFiles(){
+		var files = [];
+         $('.pdf-div').each(function() {
+            var file = $(this).data('file');
+            files.push(file);
+        });
+		return files;
+	}
     
-    function calcTotalFileSize(files, queuedFiles){
+    function calcTotalFileSize(files){
         var totalFileSize = 0;
         for(var i = 0; i < files.length; i++){
             totalFileSize += files[i].size;
-        }
-        for(var i = 0; i < queuedFiles.length; i++){
-            totalFileSize += queuedFiles[i].size;
         }
         return totalFileSize;
     }

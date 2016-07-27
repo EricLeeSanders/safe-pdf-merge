@@ -11,6 +11,7 @@ var spm_util = require('./lib/util');
 var spm_purge = require('./lib/purge');
 var logger = require('./lib/logger');
 var https = require('https');
+var http = require('http');
 
 var failCallback = function (req, res, next, nextValidRequestDate) {
     console.log(req.ip + ': Too many requests');
@@ -188,7 +189,20 @@ app.use(function(err, req, res, next) {
     }
 });
 
-app.listen(process.env.PORT, process.env.IP, function(){
-    console.log('Server is listening...'); 
-});
+// app.listen(process.env.PORT, process.env.IP, function(){
+//     console.log('Server is listening...'); 
+// });
 
+http.createServer(function(req, res) {   
+        res.writeHead(301, {"Location": "https://" + req.headers['host'] + req.url});
+        res.end();
+}).listen(80);
+
+var options = {
+	ca: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.ca-bundle'),
+	key: fs.readFileSync(__dirname + '/ssl/safe-pdf-merge-ssl.pem'),
+	cert: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.crt')
+};
+
+var httpsServer = https.createServer(options, app);
+httpsServer.listen(443);
