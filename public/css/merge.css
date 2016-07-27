@@ -49,6 +49,11 @@ input[type="button"]::-moz-focus-inner {
    border: 0;
 }
 
+a, a:visited{
+     color: black;
+     text-decoration: none;
+}
+
 .hr-vert {
     height: 100%;
     display: none;
@@ -69,6 +74,10 @@ input[type="button"]::-moz-focus-inner {
 
 :-ms-input-placeholder {  
    text-align: center; 
+}
+
+textarea:focus, input:focus{
+    outline: none;
 }
 
 #main-content {
@@ -263,6 +272,18 @@ footer {
     margin-top: 20px;
     margin-bottom: 10px;
     text-align:center;
+}
+
+#terms {
+    max-width: 600px;
+}
+
+#terms h3 {
+    text-align: left;
+}
+
+#terms p {
+    text-align: left;
 }
 
 

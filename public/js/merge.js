@@ -1,7 +1,7 @@
 (function(){    
     var maxFileSize = 1024 * 1024 * 20;
     Sortable.create(items, {
-      group: "sorting",
+      group: 'sorting',
       sort: true
     });
     function addFile(event){
@@ -16,7 +16,7 @@
         
         var queuedFiles = [];
          $('.pdf-div').each(function() {
-            var file = $(this).data("file");
+            var file = $(this).data('file');
             queuedFiles.push(file);
         });
         
@@ -30,33 +30,33 @@
             }
             var totalFileSizeMb = totalFileSize/(1024*1024)
             totalFileSizeMb = +totalFileSizeMb.toFixed(2);
-            $('#usedMb').text("Used: " + totalFileSizeMb + " mb")
+            $('#usedMb').text('Used: ' + totalFileSizeMb + ' mb')
             for(var i = 0; i < files.length; i++){
-                var pdf_li = $("<li />");
-                $("#items").append(pdf_li);  
+                var pdf_li = $('<li />');
+                $('#items').append(pdf_li);  
                 
-                var pdf_div = $("<div />", { 
-                        class: "pdf-div",
+                var pdf_div = $('<div />', { 
+                        class: 'pdf-div',
                     });
-                $(pdf_div).data("file", files.item(i));
+                $(pdf_div).data('file', files.item(i));
                 $(pdf_li).append(pdf_div);   
 
-                var remove_pdf_img = $("<img />", { 
-                        class: "remove-pdf-image",
-                        src: "images/pdf_remove.png",
-                        alt: "delete"
+                var remove_pdf_img = $('<img />', { 
+                        class: 'remove-pdf-image',
+                        src: 'images/pdf_remove.png',
+                        alt: 'delete'
                     });
                 pdf_div.append(remove_pdf_img);   
 
-                var pdf_img = $("<img />", { 
-                        class: "pdf-image",
-                        src: "images/pdf.png",
-                        alt: "pdf-pic"
+                var pdf_img = $('<img />', { 
+                        class: 'pdf-image',
+                        src: 'images/pdf.png',
+                        alt: 'pdf-pic'
                     });
                 pdf_div.append(pdf_img);   
                 
-                var label = $("<label />", {
-                        class: "custom-file-upload",
+                var label = $('<label />', {
+                        class: 'custom-file-upload',
                         text: files[i].name,
                         title: files[i].name //tooltip
                     });
@@ -79,34 +79,34 @@
         }
     }
     
-    $("#main-content").resize(function(){
-       alert("test"); 
+    $('#main-content').resize(function(){
+       alert('test'); 
     });
     
-    $("#clickInput").on("change",function(event){
+    $('#clickInput').on('change',function(event){
         addFile(event);
     });
     
-    $(".dropzone").on('dragover', function(event) {
+    $('.dropzone').on('dragover', function(event) {
         event.preventDefault();
         event.stopPropagation();
-        $(this).addClass("dragover");
+        $(this).addClass('dragover');
     });
     
-    $(".dropzone").on('dragleave', function(event) {
+    $('.dropzone').on('dragleave', function(event) {
         event.preventDefault();
         event.stopPropagation();
-        $(this).removeClass("dragover");
+        $(this).removeClass('dragover');
     });
     
-    $(".dropzone").on('drop', function(event) {
+    $('.dropzone').on('drop', function(event) {
         event.preventDefault();
         event.stopPropagation();
-        $(this).removeClass("dragover");
+        $(this).removeClass('dragover');
         addFile(event.originalEvent);
     });
     
-    $(".dropzone").click(function(){
+    $('.dropzone').click(function(){
         $('#clickInput').val(null); //So the same file can be added more than once
         $('#clickInput').click();
     });
@@ -119,8 +119,11 @@
         e.stopPropagation();   
         if($('#items').children().length <= 1){
             $('#pdf-list').toggleClass('pdf-list-active pdf-list-inactive');
-            $('#usedMb').text('');
-            
+        	$('#usedMb').text('');
+        	$('#usedMb').css('width', '0');
+        	$('.progress-bar').text('');
+        	$('.progress-bar').width('0%');
+        	$('#merge-name').val('');  
         }
         $(this).parent().parent().remove();
     });
@@ -131,46 +134,48 @@
     
     $('#btn-clear').click(function(event){
         event.stopPropagation();
-        $('#pdf-list').toggleClass('pdf-list-active pdf-list-inactive');
+    	if($('#pdf-list').is('.pdf-list-active')) {
+           	$('#pdf-list').toggleClass('pdf-list-active pdf-list-inactive');
+    	}
         $('#usedMb').text('');
         $('#usedMb').css('width', '0');
         $('.progress-bar').text('');
         $('.progress-bar').width('0%');
-        $("#items").children().remove();
-        $("#merge-name").val('');
+        $('#items').children().remove();
+        $('#merge-name').val('');
     });
     
     $('#btn-merge').click(function(event){
         event.stopPropagation();    
-        $('.progress-bar').text('0%');
+        $('.progress-bar').text('');
         $('.progress-bar').width('0%');
         var formData = new FormData();
         var files = [];
          $('.pdf-div').each(function() {
-            var file = $(this).data("file");
+            var file = $(this).data('file');
             files.push(file);
         });
         for(var i = 0; i < files.length; i++){
             formData.append('uploads[]', files[i], files[i].name);
         } 
         if ( files.length < 1 ){
-            alert("No files added!");
+            alert('No files added!');
             return;
         }
         $.ajax({
             url: './upload',
             type: 'POST',
             data: formData,
-            contentType: "application/pdf",
-            dataType: "text",
+            contentType: 'application/pdf',
+            dataType: 'text',
             processData: false,
             contentType: false,
             success: function(data){
                 var mergeName = $('#merge-name').val();
-                if(mergeName === undefined || mergeName === null || mergeName === ""){
-                    mergeName = "merged_document";
+                if(mergeName === undefined || mergeName === null || mergeName === ''){
+                    mergeName = 'merged_document';
                 }
-                window.location = "/download?name=" + mergeName + "&uuid="+data;
+                window.location = '/download?name=' + mergeName + '&uuid='+data;
                 $('.progress-bar').html('Done!');
             },
             error: function(data) {
@@ -209,21 +214,21 @@
         }
         return totalFileSize;
     }
+    
     function validateFiles(files, totalFileSize) {
-
         for(var i = 0; i < files.length; i++){
             var file = files[i];
             if(file.type != 'application/pdf'){
-                alert("File not a PDF!")
+                alert('File not a PDF!')
                 return false;
             } else if(file.size > maxFileSize){
-                alert("File size too large! Limit is: " + (maxFileSize/(1024*1024)) + " mb");
+                alert('File size too large! Limit is: ' + (maxFileSize/(1024*1024)) + ' mb');
                 return false;
             } 
         }
 
         if (totalFileSize > maxFileSize) {
-            alert("Total file size is over the Limit of: " + (maxFileSize/(1024*1024)) + " mb")
+            alert('Total file size is over the Limit of: ' + (maxFileSize/(1024*1024)) + ' mb')
             return false;
         }
         return true;

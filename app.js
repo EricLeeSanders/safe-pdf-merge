@@ -7,9 +7,10 @@ var fs = require('fs');
 var Busboy = require('busboy');
 var ExpressBrute = require('express-brute');
 var validator = require('validator');
-var spm_util = require('./lib/util.js');
-var spm_purge = require('./lib/purge.js');
-var logger = require('./lib/logger.js');
+var spm_util = require('./lib/util');
+var spm_purge = require('./lib/purge');
+var logger = require('./lib/logger');
+var https = require('https');
 
 var failCallback = function (req, res, next, nextValidRequestDate) {
     console.log(req.ip + ': Too many requests');
@@ -35,30 +36,31 @@ var bruteforce = new ExpressBrute(store , {
 app.use(express.static(path.join(__dirname, 'public')));
 //app.set('trust proxy', 1);
 
-app.get("/", function(req, res){
+app.get('/', function(req, res){
   res.sendFile(path.join(__dirname, 'views/index.html'));
 });
 
 //Download the merged pdf
-app.get("/download", function(req,res){
+app.get('/download', function(req,res){
     var uuid = req.query.uuid;
     if(!validator.isUUID(uuid,4)){
-        logger.error("Not valid UUID: " + uuid);
+        logger.error('Not valid UUID: ' + uuid);
         if(!res.headersSent){
             res.redirect('/');
         }
         return;
     }
+    
     var fileName = req.query.name;
     fileName = fileName.substring(0, 255);
     if(fileName.length <= 0){
-      fileName = "merged_document";
+      fileName = 'merged_document';
     } else if(!validator.isAlphanumeric(fileName)){
-        logger.info("Not alpha numeric: " + fileName);
-        fileName = "merged_document";
+        logger.info('Not alpha numeric: ' + fileName);
+        fileName = 'merged_document';
     }
     
-    res.download('merges/' + req.query.uuid + '.pdf', fileName + '.pdf', function(err){
+    res.download(__dirname + '/merges/' + req.query.uuid + '.pdf', fileName + '.pdf', function(err){
         if(err){
             logger.error(err);
             if(!res.headersSent){
@@ -66,8 +68,7 @@ app.get("/download", function(req,res){
             }
             return;
         } 
-           
-        removeFile('merges/' + req.query.uuid + '.pdf');
+        removeFile(__dirname + '/merges/' + req.query.uuid + '.pdf');
     });
     
 });
@@ -79,8 +80,9 @@ app.post('/upload', bruteforce.prevent, function(req, res, next){
     
     var bytesExpected = getBytesExpected(req.headers);
     if(bytesExpected > maxFileSize){
-        return next(new Error("Anticipating a file of size " + (bytesExpected/(1024*1024)) + " mb. File size is too large"));
+        return next(new Error('Anticipating a file of size ' + (bytesExpected/(1024*1024)) + ' mb. File size is too large'));
     }
+    
     var files = [];
     var error = false;
     busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
@@ -96,38 +98,43 @@ app.post('/upload', bruteforce.prevent, function(req, res, next){
         //If there was no error with another file
         //then save the file
         if(!error){
-            var targetPath = './uploads/' + uuid.v4(); 
+            var targetPath = __dirname + '/uploads/' + uuid.v4(); 
             files.push(targetPath);
             file.pipe(fs.createWriteStream(targetPath));
-            logger.info("Uploading: " + targetPath);
+            logger.info('Uploading: ' + targetPath);
         }
         
         file.on('limit', function(data) {                                               
             removeFiles(files, next);
             req.unpipe(busboy);
-            next(new Error("File limit reached..."));
+            next(new Error('File limit reached...'));
         });
+        
     });
     busboy.on('finish', function() {
         logger.info('Done parsing form!');
         if(files.length > 0){
             merge(files, req, res, next);
         } else {
-            next(new Error("No Files..."));
+            next(new Error('No Files...'));
         }
     });
     req.pipe(busboy);
 });
 
+app.get('/privacy_policy', function(req,res){
+    res.sendFile(path.join(__dirname, 'views/privacy_policy.html'));
+});
+
 function removeFiles(files, next){
-    logger.info("Removing files");
+    logger.info('Removing files');
     files.forEach(function(file){   
         removeFile(file, next);
     });
 }
 
 function removeFile(file, next){
-    logger.info("Removing file: " + file);
+    logger.info('Removing file: ' + file);
     //check if the file exists first. fs.exists is deprecated
     fs.stat(file, function (err, stats) {
         if (err) {
@@ -148,12 +155,12 @@ function removeFile(file, next){
 function merge(files, req, res, next){
     var pdfMerge = new PDFMerge(files);
     var randName = uuid.v4();
-    pdfMerge.asNewFile('merges/'+randName+'.pdf').merge(function(error, filePath) {
+    pdfMerge.asNewFile(__dirname + '/merges/'+randName+'.pdf').merge(function(error, filePath) {
         if(error){
             removeFiles(files);
             return next(error);
         } 
-        logger.info("Merged pdfs");
+        logger.info('Merged pdfs');
         spm_util.saveToDB(req.ip, files.length, randName );
         res.status(201).send(randName);
         removeFiles(files); //Remove the uploaded files
@@ -180,6 +187,8 @@ app.use(function(err, req, res, next) {
         res.end('Something went wrong...');
     }
 });
- app.listen(process.env.PORT, process.env.IP, function(){
-   console.log("Server is listening..."); 
- });
+
+app.listen(process.env.PORT, process.env.IP, function(){
+    console.log('Server is listening...'); 
+});
+
