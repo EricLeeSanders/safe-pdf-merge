@@ -122,8 +122,8 @@ app.post('/upload', bruteforce.prevent, function(req, res, next){
     req.pipe(busboy);
 });
 
-app.get('/privacy_policy', function(req,res){
-    res.sendFile(path.join(__dirname, 'views/privacy_policy.html'));
+app.get('/terms_privacy', function(req,res){
+    res.sendFile(path.join(__dirname, 'views/terms_privacy.html'));
 });
 
 function removeFiles(files, next){
