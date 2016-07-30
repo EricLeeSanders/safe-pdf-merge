@@ -43,9 +43,8 @@ app.get('/', function(req, res){
 
 //Download the merged pdf
 app.get('/download', function(req,res){
-    var uuid = req.query.uuid;
-    if(!validator.isUUID(uuid,4)){
-        logger.error('Not valid UUID: ' + uuid);
+    if(!validator.isUUID(req.query.uuid,4)){
+        logger.error('Not valid UUID: ' + req.query.uuid);
         if(!res.headersSent){
             res.redirect('/');
         }
