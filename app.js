@@ -451,20 +451,20 @@ app.use(function(error, req, res, next) {
     }
 });
 
-app.listen(process.env.PORT, process.env.IP, function() {
-    console.log('Server is listening...');
-});
+// app.listen(process.env.PORT, process.env.IP, function() {
+//     console.log('Server is listening...');
+// });
 
-// http.createServer(function(req, res) {   
-//         res.writeHead(301, {"Location": "https://" + req.headers['host'] + req.url});
-//         res.end();
-// }).listen(80);
+http.createServer(function(req, res) {   
+        res.writeHead(301, {"Location": "https://" + req.headers['host'] + req.url});
+        res.end();
+}).listen(80);
 
-// var options = {
-// 	ca: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.ca-bundle'),
-// 	key: fs.readFileSync(__dirname + '/ssl/safe-pdf-merge-ssl.pem'),
-// 	cert: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.crt')
-// };
+var options = {
+	ca: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.ca-bundle'),
+	key: fs.readFileSync(__dirname + '/ssl/safe-pdf-merge-ssl.pem'),
+	cert: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.crt')
+};
 
-// var httpsServer = https.createServer(options, app);
-// httpsServer.listen(443);
+var httpsServer = https.createServer(options, app);
+httpsServer.listen(443);
