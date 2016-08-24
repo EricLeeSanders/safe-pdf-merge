@@ -5,6 +5,6 @@ logs
 npm-debug.log*
 
 
-/merges
+/files
 /uploads
 /node_modules
