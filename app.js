@@ -12,196 +12,459 @@ var spm_purge = require('./lib/purge');
 var logger = require('./lib/logger');
 var https = require('https');
 var http = require('http');
+var PDFSplit = require('pdf-split');
+var Zip = require('node-zip');
 
-var failCallback = function (req, res, next, nextValidRequestDate) {
-    console.log(req.ip + ': Too many requests');
+// Callback for Express Brute
+var limitCallback = function(req, res, next, nextValidRequestDate) {
     logger.error(req.ip + ': Too many requests');
-    res.writeHead(429, {'Connection': 'close'});
-    res.end('Too many requests....');    
+    res.writeHead(429, {
+        'Connection': 'close'
+    });
+    res.end('Too many requests....');
 
 };
 
 var store = new ExpressBrute.MemoryStore();
-var bruteforce = new ExpressBrute(store , {
+var bruteforce = new ExpressBrute(store, {
     freeRetries: 4, //Allow 5 retries before blocking
-    minWait: 60*1000,
-    maxWait: 60*1000,
+    minWait: 60 * 1000,
+    maxWait: 60 * 1000,
     lifetime: 60,
     refreshTimeoutOnRequest: false,
     attachResetToRequest: false,
-    failCallback: failCallback
+    limitCallback: limitCallback
 });
-
-
 
 app.use(express.static(path.join(__dirname, 'public')));
 //app.set('trust proxy', 1);
 
-app.get('/', function(req, res){
-  res.sendFile(path.join(__dirname, 'views/index.html'));
+app.get('/', function(req, res) {
+    res.sendFile(path.join(__dirname, 'views/merge.html'));
 });
 
-//Download the merged pdf
-app.get('/download', function(req,res){
-    if(!validator.isUUID(req.query.uuid,4)){
-        logger.error('Not valid UUID: ' + req.query.uuid);
-        if(!res.headersSent){
+app.get('/split', function(req, res) {
+    res.sendFile(path.join(__dirname, 'views/split.html'));
+});
+
+app.get('/terms_privacy', function(req, res) {
+    res.sendFile(path.join(__dirname, 'views/terms_privacy.html'));
+});
+
+/**
+ * Downloads the file based on the type sent. 
+ * Either a PDF or a zip.
+ **/
+app.get('/download', function(req, res, next) {
+    // Make sure the UUID is valid
+    if (!validator.isUUID(req.query.uuid, 4)) {
+        logger.error('Not a valid UUID: ' + req.query.uuid);
+        if (!res.headersSent) {
             res.redirect('/');
         }
         return;
     }
-    
+    logger.info('Downloading: ' + req.query.uuid + '.' + req.query.type);
     var fileName = req.query.name;
-    fileName = fileName.substring(0, 255);
-    if(fileName.length <= 0){
-      fileName = 'merged_document';
-    } else if(!validator.isAlphanumeric(fileName)){
-        logger.info('Not alpha numeric: ' + fileName);
-        fileName = 'merged_document';
+    // Make sure that there is a file name and it is valid
+    if (fileName) {
+        fileName = fileName.substring(0, 255);
+        if (fileName.length <= 0) {
+            fileName = 'pdf_document';
+        }
+        else if (!validator.isAlphanumeric(fileName)) {
+            logger.info('Not alpha numeric: ' + fileName);
+            fileName = 'pdf_document';
+        }
     }
-    
-    res.download(__dirname + '/merges/' + req.query.uuid + '.pdf', fileName + '.pdf', function(err){
-        if(err){
-            logger.error(err);
-            if(!res.headersSent){
+    else {
+        fileName = 'pdf_document';
+    }
+
+    res.download(__dirname + '/files/' + req.query.uuid + '.' + req.query.type, fileName + '.' + req.query.type, function(error) {
+        if (error) {
+            logger.error(error);
+            if (!res.headersSent) {
                 res.redirect('/');
             }
             return;
-        } 
-        removeFile(__dirname + '/merges/' + req.query.uuid + '.pdf');
+        }
+        // Remove the file after it is downloaded
+        removeFile(__dirname + '/files/' + req.query.uuid + '.' + req.query.type);
     });
-    
+
 });
 
-//Upload and merge the pdfs
-app.post('/upload', bruteforce.prevent, function(req, res, next){
-    var maxFileSize = 1024*1024*20;
-    var busboy = new Busboy({ headers: req.headers, limits: {fileSize: maxFileSize} });
-    
+/**
+ * Handles uploading a PDF(s) and headers
+ **/
+app.post('/upload', bruteforce.prevent, function(req, res, next) {
+    var maxFileSize = 1024 * 1024 * 20; //max file size that can be uploaded
+    var busboy = new Busboy({
+        headers: req.headers,
+        limits: {
+            fileSize: maxFileSize
+        }
+    });
+
+    // Check to make sure that the file that is going to be uploaded is not greater than the max file size allowed.
     var bytesExpected = getBytesExpected(req.headers);
-    if(bytesExpected > maxFileSize){
-        return next(new Error('Anticipating a file of size ' + (bytesExpected/(1024*1024)) + ' mb. File size is too large'));
+    if (bytesExpected > maxFileSize) {
+        return next(new Error('Anticipating a file of size ' + (bytesExpected / (1024 * 1024)) + ' mb. File size is too large'));
     }
-    
+
     var files = [];
+    var splits = [];
     var error = false;
+    var type;
+    var splitFileNames = [];
+    // Called for each file upload
     busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
-        if(mimetype !== 'application/pdf') {
-            if(!error) {
+        // Make sure the file is a pdf
+        if (mimetype !== 'application/pdf') {
+            if (!error) {
                 error = true;
                 removeFiles(files, next);
                 req.unpipe(busboy);
-                next(new Error('File is not a valid PDF: ' + mimetype));
+                return next(new Error('File is not a valid PDF: ' + mimetype));
             }
             return;
         }
-        //If there was no error with another file
-        //then save the file
-        if(!error){
-            var targetPath = __dirname + '/uploads/' + uuid.v4(); 
+        // If there was no error with another file
+        // then save the file
+        if (!error) {
+            var targetPath = __dirname + '/uploads/' + uuid.v4();
             files.push(targetPath);
             file.pipe(fs.createWriteStream(targetPath));
             logger.info('Uploading: ' + targetPath);
         }
-        
-        file.on('limit', function(data) {                                               
+
+        // If a file reaches the max file size limit cancel the request
+        file.on('limit', function(data) {
             removeFiles(files, next);
             req.unpipe(busboy);
-            next(new Error('File limit reached...'));
+            return next(new Error('File limit reached...'));
         });
-        
+
     });
+
+    // Called for each field
+    busboy.on('field', function(fieldname, val, fieldnameTruncated, valTruncated) {
+        if (fieldname === 'type') {
+            type = val;
+        }
+        else if (fieldname === 'splits') {
+            splits.push(val);
+        }
+        else if (fieldname === 'splitFileNames') {
+            splitFileNames.push(val);
+        }
+    });
+
+    // After fields and files are done uploading
     busboy.on('finish', function() {
         logger.info('Done parsing form!');
-        if(files.length > 0){
-            merge(files, req, res, next);
-        } else {
-            next(new Error('No Files...'));
+        if (files.length > 0) {
+            if (type === 'merge') {
+                merge(files, req, res, next);
+            }
+            else if (type === 'split') {
+                split(splits, splitFileNames, files[0], req, res, next, maxFileSize);
+            }
+        }
+        else {
+            return next(new Error('No Files...'));
         }
     });
     req.pipe(busboy);
 });
 
-app.get('/terms_privacy', function(req,res){
-    res.sendFile(path.join(__dirname, 'views/terms_privacy.html'));
-});
 
-function removeFiles(files, next){
+/**
+ * Removes multiple files
+ **/
+function removeFiles(files, next) {
     logger.info('Removing files');
-    files.forEach(function(file){   
+    files.forEach(function(file) {
         removeFile(file, next);
     });
 }
 
-function removeFile(file, next){
+/**
+ * Removes a file
+ **/
+function removeFile(file, next) {
     logger.info('Removing file: ' + file);
     //check if the file exists first. fs.exists is deprecated
-    fs.stat(file, function (err, stats) {
-        if (err) {
-            logger.error(err);
-            return next(err);
+    fs.stat(file, function(error, stats) {
+        if (error) {
+            return next(error);
         }
-         fs.unlink(file,function(err){
-            if(err) {
-                logger.error(err);
-                return next(err);
+        fs.unlink(file, function(error) {
+            if (error) {
+                return next(error);
             }
-            logger.info(file +': deleted successfully');
-        });  
+            logger.info(file + ': deleted successfully');
+        });
     });
 }
 
-
-function merge(files, req, res, next){
+/**
+ * Merges multiple PDFs
+ **/
+function merge(files, req, res, next) {
     var pdfMerge = new PDFMerge(files);
     var randName = uuid.v4();
-    pdfMerge.asNewFile(__dirname + '/merges/'+randName+'.pdf').merge(function(error, filePath) {
-        if(error){
+    var randFilePath = __dirname + '/files/' + randName + '.pdf';
+    pdfMerge.asNewFile(randFilePath).merge(function(error, filePath) {
+        if (error) {
             removeFiles(files);
             return next(error);
-        } 
+        }
         logger.info('Merged pdfs');
-        spm_util.saveToDB(req.ip, files.length, randName );
-        res.status(201).send(randName);
+        spm_util.saveToDB(req.ip, 'merge', files.length, randFilePath);
+        if (!res.headersSent) {
+            var resData = {
+                type: 'pdf',
+                uuid: randName
+            }
+            res.status(201);
+            res.contentType('application/json');
+            res.send(JSON.stringify(resData));
+        }
         removeFiles(files); //Remove the uploaded files
     });
 }
 
+/**
+ * Begins the process of splitting a PDF.
+ **/
+function split(splits, splitFileNames, file, req, res, next, maxFileSize) {
+    var pdfSplitHelper = new PDFSplit(file);
+    validateSplits(pdfSplitHelper, splits, file, next, maxFileSize, res, splitPDF.bind(this, file, splitFileNames, pdfSplitHelper, req, res, next));
+}
 
+/**
+ * Calls the PDFSplit to split a pdf. 
+ * Determines wether the PDF(s) should be zipped or not.
+ **/
+function splitPDF(file, splitFileNames, pdfSplitHelper, req, res, next, splits) {
+    var randName;
+    var randFilePaths = [];
+    logger.info('Splitting: ' + file);
+    for (var i = 0, remaining = splits.length; i < splits.length; i++) {
+        randName = uuid.v4();
+        randFilePaths.push(__dirname + '/files/' + randName + '.pdf');
+        pdfSplitHelper.split(splits[i], randFilePaths[i], function(error, filePath) {
+            if (error) {
+                return next(error);
+            }
+            remaining--;
+            if (remaining <= 0) {
+                if (splits.length > 1) {
+                    zipSplits(splitFileNames, randFilePaths, req, res, next);
+                }
+                else {
+                    spm_util.saveToDB(req.ip, 'split', splits.length, randFilePaths[0]);
+                    if (!res.headersSent) {
+                        var resData = {
+                            type: 'pdf',
+                            uuid: randName
+                        }
+                        res.status(201);
+                        res.contentType('application/json');
+                        res.send(JSON.stringify(resData));
+                    }
+                }
+                removeFile(file, next) // remove uploaded file
+            }
+
+        });
+    }
+}
+
+/**
+ * Validates the split inputs and ensures that they are in the correct format.
+ * If a split is not in the correct format, it is skipped and will not be used.
+ * Also estimates how big the output of the file(s) will be. 
+ * fileSplits holds the splits for each file. A pseudo 2d array.
+ **/
+function validateSplits(pdfSplitHelper, fileSplits, file, next, maxFileSize, res, callback) {
+    logger.info('Validating: ' + file);
+    fs.stat(file, function(error, stats) {
+        if (error) {
+            removeFile(file, next);
+            return next(error);
+        }
+        var fileSize = stats["size"];
+        logger.info(file + ': - size: ' + fileSize);
+        // Get the number of pages that the pdf has
+        pdfSplitHelper.numPages(function(error, numPages) {
+            if (error) {
+                removeFile(file, next);
+                return next(error);
+            }
+            else if (!numPages || numPages <= 0) {
+                removeFile(file, next);
+                return next(new Error(file + ': Error getting the number of pages.'));
+            }
+            numPages = numPages.replace(/^\s+|\s+$/g, ''); //Remove whitespace, tabs, new lines
+            logger.info(file + ': Number of Pages: ' + numPages);
+            var sizePerPage = fileSize / numPages;
+            var totalPageCount = 0;
+            var parsedSplits = [];
+            // Begin to parse all of the split inputs to verify they are
+            // valid inputs
+            logger.info(file + ': File Splits: ' + fileSplits);
+            fileSplits.forEach(function(splits) {
+                splits = splits.replace(/ /g, ''); //remove whitespace
+
+                // Get all of the splits for a fil
+                // ex 4-7,11-18
+                var matches = splits.match(/\d+-\d+/g);
+                if (!matches) {
+                    return next(new Error('Error parsing the split inputs.'));
+                }
+
+                var parsedMatch = [];
+                // Parse each individual split
+                matches.forEach(function(split) {
+                    split = split.replace(/ /g, ''); //remvoe whitespace
+
+                    // Get each individual split
+                    // ex 4-7
+                    var numbers = split.match(/(\d+)-(\d+)/);
+
+                    // If a page input is greater than the number of pages
+                    // we change the number to the number of pages
+                    if (parseInt(numbers[1], 10) > numPages) {
+                        numbers[1] = numPages;
+                    }
+                    if (parseInt(numbers[2], 10) > numPages) {
+                        numbers[2] = numPages;
+                    }
+
+                    // Get the total page count for each split and add to the total
+                    totalPageCount += Math.abs(numbers[2] - numbers[1]) + 1;
+
+                    // Recreate the the split
+                    var strSplit = numbers[1].toString() + '-' + numbers[2].toString();
+                    parsedMatch.push(strSplit);
+                });
+                parsedSplits.push(parsedMatch);
+            });
+            logger.info(file + ': Parsed Splits: ' + parsedSplits);
+            var estFileSize = totalPageCount * sizePerPage;
+            logger.info(file + ': Estimated File Size: ' + estFileSize);
+            if (estFileSize > maxFileSize) {
+                if (!res.headersSent) {
+                    res.writeHead(413, {
+                        'Connection': 'close'
+                    });
+                    res.end('Size of PDFs created exceeds the limit');
+                }
+                removeFile(file, next);
+                return;
+            }
+            if (parsedSplits <= 0) {
+                removeFile(file, next)
+                return next(new Error('No Files...'));
+            }
+            callback(parsedSplits);
+        });
+    });
+}
+
+/**
+ *  Zips multiple PDFs
+ **/
+function zipSplits(splitFileNames, filePaths, req, res, next) {
+    var zip = new Zip();
+    logger.info('Zipping files');
+    for (var i = 0, remaining = filePaths.length; i < filePaths.length; i++) {
+        (function(i) {
+            fs.readFile(filePaths[i], 'binary', function(error, buffer) {
+                if (!splitFileNames[i]) {
+                    splitFileNames[i] = 'split_document_' + (i + 1);
+                }
+                zip.file(splitFileNames[i] + '.pdf', buffer, {
+                    binary: true
+                });
+                logger.info('Zipping: ' + filePaths[i]);
+                remaining--;
+                if (remaining <= 0) {
+                    var randName = uuid.v4();
+                    var filePath = __dirname + '/files/' + randName + '.zip';
+                    fs.writeFile(filePath, zip.generate({
+                        compression: 'DEFLATE',
+                        type: 'base64'
+                    }), 'base64', function(error) {
+                        if (error) {
+                            removeFiles(filePaths);
+                            return next(error);
+                        }
+                        logger.info("All files zipped");
+                        spm_util.saveToDB(req.ip, 'split', filePaths.length, filePath);
+                        if (!res.headersSent) {
+                            var resData = {
+                                type: 'zip',
+                                uuid: randName
+                            }
+                            res.status(201);
+                            res.contentType('application/json');
+                            res.send(JSON.stringify(resData));
+                            removeFiles(filePaths, next)
+                        }
+                    });
+                }
+            });
+        })(i);
+    }
+}
+
+/**
+ * Gets the bytes that are expected from the header
+ **/
 function getBytesExpected(headers) {
     var contentLength = headers['content-length'];
     if (contentLength) {
         return parseInt(contentLength, 10);
-    } else if (headers['transfer-encoding'] == null) {
+    }
+    else if (headers['transfer-encoding'] == null) {
         return 0;
-    } else {
+    }
+    else {
         return null;
     }
 }
 
-//Catch errors and end the response
-app.use(function(err, req, res, next) {
-    logger.error(err);
-    if(!res.headersSent){
-        res.writeHead(500, {'Connection': 'close'});
+/**
+ * Catches errors and logs them 
+ **/
+app.use(function(error, req, res, next) {
+    logger.error(error);
+    if (!res.headersSent) {
+        res.writeHead(500, {
+            'Connection': 'close'
+        });
         res.end('Something went wrong...');
     }
 });
 
-// app.listen(process.env.PORT, process.env.IP, function(){
-//     console.log('Server is listening...'); 
-// });
+app.listen(process.env.PORT, process.env.IP, function() {
+    console.log('Server is listening...');
+});
 
-http.createServer(function(req, res) {   
-        res.writeHead(301, {"Location": "https://" + req.headers['host'] + req.url});
-        res.end();
-}).listen(80);
+// http.createServer(function(req, res) {   
+//         res.writeHead(301, {"Location": "https://" + req.headers['host'] + req.url});
+//         res.end();
+// }).listen(80);
 
-var options = {
-	ca: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.ca-bundle'),
-	key: fs.readFileSync(__dirname + '/ssl/safe-pdf-merge-ssl.pem'),
-	cert: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.crt')
-};
+// var options = {
+// 	ca: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.ca-bundle'),
+// 	key: fs.readFileSync(__dirname + '/ssl/safe-pdf-merge-ssl.pem'),
+// 	cert: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.crt')
+// };
 
-var httpsServer = https.createServer(options, app);
-httpsServer.listen(443);
+// var httpsServer = https.createServer(options, app);
+// httpsServer.listen(443);

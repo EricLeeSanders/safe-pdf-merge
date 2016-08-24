@@ -1,18 +1,23 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>Safe PDF Merge!</title>
-  <link rel="shortcut icon" type="image/png" href="images/favicon.png"/>
+  <link rel="shortcut icon" type="image/png" href="images/favicon.png" />
   <link href="https://fonts.googleapis.com/css?family=Didact+Gothic" rel="stylesheet" type="text/css">
-	<link href="css/merge.css" rel="stylesheet">
+  <link href="css/safepdfmerge.css" rel="stylesheet">
+  <link href="css/merge.css" rel="stylesheet">
 </head>
-<body>
-  <div class = "flex-container">
-    <div id ="main-content-container">
-      <div id = "main-content-outer">
-        <div id = "main-content" >
-          <div class = "dropzone">
-            <div class = "dropzone-main-panel">
+
+<body class="merge-pdf">
+  <div class="flex-container">
+    <div id="main-content-container">
+      <a href="/"><img src="images/btn-merge.png" id="btn-merge"></a>
+      <a href="/split"><img src="images/btn-split.png" id="btn-split"></a>
+      <div id="main-content-outer">
+        <div id="main-content">
+          <div class="dropzone">
+            <div class="dropzone-main-panel">
               <h1>Safe PDF Merge</h1>
               <h3>Safely and Securly Merge Your PDFs Online!</h3>
               <img src="/images/merge.png" alt="Merge Image" />
@@ -23,27 +28,31 @@
               </div>
               <input type="text" id="merge-name" name="merge-name" placeholder="Merged File Name" maxlength="255">
               <br>
-              <input type="button" id="btn-merge" value="Merge">
+              <input type="button" id="btn-submit" value="Merge">
               <input type="button" id="btn-clear" value="Clear Files">
             </div>
             <div id="pdf-list" class="pdf-list-inactive">
-              <div><h3><label id="usedMb"></label></h3></div>
+              <div>
+                <h3><label id="usedMb"></label></h3></div>
               <ul id="items">
-                  
+
               </ul>
             </div>
           </div>
         </div>
-      </div>  
+      </div>
     </div>
     <div id="push"></div>
     <footer>
       <a href="/terms_privacy">Terms & Privacy</a>
-    </footer>  
+    </footer>
   </div>
-  <input type="file" multiple="true" id="clickInput" >
+  <input type="file" multiple="true" id="clickInput">
   <script src="https://code.jquery.com/jquery-2.2.0.min.js"></script>
   <script src="//cdn.jsdelivr.net/sortable/latest/Sortable.min.js"></script>
+  <script src="js/validation.js"></script>
   <script src="js/merge.js"></script>
+  <script src="js/safepdfmerge.js"></script>
 </body>
+
 </html>
