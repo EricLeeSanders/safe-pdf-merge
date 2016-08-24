@@ -7,6 +7,7 @@ var fs = require('fs');
 var Busboy = require('busboy');
 var ExpressBrute = require('express-brute');
 var validator = require('validator');
+var sanitize = require("sanitize-filename");
 var spm_util = require('./lib/util');
 var spm_purge = require('./lib/purge');
 var logger = require('./lib/logger');
@@ -68,14 +69,7 @@ app.get('/download', function(req, res, next) {
     var fileName = req.query.name;
     // Make sure that there is a file name and it is valid
     if (fileName) {
-        fileName = fileName.substring(0, 255);
-        if (fileName.length <= 0) {
-            fileName = 'pdf_document';
-        }
-        else if (!validator.isAlphanumeric(fileName)) {
-            logger.info('Not alpha numeric: ' + fileName);
-            fileName = 'pdf_document';
-        }
+        fileName = sanitize(fileName);
     }
     else {
         fileName = 'pdf_document';
