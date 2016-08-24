@@ -7,7 +7,7 @@ var fs = require('fs');
 var Busboy = require('busboy');
 var ExpressBrute = require('express-brute');
 var validator = require('validator');
-var sanitize = require("sanitize-filename");
+var sanitize = require('sanitize-filename');
 var spm_util = require('./lib/util');
 var spm_purge = require('./lib/purge');
 var logger = require('./lib/logger');
@@ -449,15 +449,17 @@ app.use(function(error, req, res, next) {
 //     console.log('Server is listening...');
 // });
 
-http.createServer(function(req, res) {   
-        res.writeHead(301, {"Location": "https://" + req.headers['host'] + req.url});
-        res.end();
+http.createServer(function(req, res) {
+    res.writeHead(301, {
+        "Location": "https://" + req.headers['host'] + req.url
+    });
+    res.end();
 }).listen(80);
 
 var options = {
-	ca: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.ca-bundle'),
-	key: fs.readFileSync(__dirname + '/ssl/safe-pdf-merge-ssl.pem'),
-	cert: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.crt')
+    ca: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.ca-bundle'),
+    key: fs.readFileSync(__dirname + '/ssl/safe-pdf-merge-ssl.pem'),
+    cert: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.crt')
 };
 
 var httpsServer = https.createServer(options, app);
