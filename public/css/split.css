@@ -1,0 +1,56 @@
+.split-input-div {
+    display: none;
+    float: right;
+    width: 300px;
+}
+
+.split-file-name {
+    vertical-align: middle;
+    display: block;
+    width: 0px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    text-align: left;
+    margin-left: 10px;
+    margin-bottom: 10px;
+    -webkit-transition: width 1s, height 1s, margin 1s;
+    -moz-transition: width 1s, height 1s, margin 1s;
+    -ms-transition: width 1s, height 1s, margin 1s;
+    transition: width 1s, height 1s, margin 1s;
+}
+
+.split-pages {
+    vertical-align: middle;
+    display: block;
+    width: 0px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    text-align: left;
+    margin-left: 10px;
+    -webkit-transition: width 1s, height 1s, margin 1s;
+    -moz-transition: width 1s, height 1s, margin 1s;
+    -ms-transition: width 1s, height 1s, margin 1s;
+    transition: width 1s, height 1s, margin 1s;
+}
+
+#file-name {
+    vertical-align: middle;
+    display: inline-block;
+    width: 0px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    text-align: middle;
+    -webkit-transition: width 1s, height 1s, margin 1s;
+    -moz-transition: width 1s, height 1s, margin 1s;
+    -ms-transition: width 1s, height 1s, margin 1s;
+    transition: width 1s, height 1s, margin 1s;
+}
+
+#add-split {
+    padding-left: 10px;
+    display: none;
+    height: 48px;
+}

@@ -2,10 +2,11 @@ CREATE DATABASE safe_pdf_merge;
 
 USE safe_pdf_merge;
 
-CREATE TABLE merge (
+CREATE TABLE log (
 	row_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
 	ip VARCHAR(39),
-	merge_time_utc DATETIME,
+	event_time_utc DATETIME,
+	operation VARCHAR(50),
 	file_size BIGINT UNSIGNED,
 	num_files INT UNSIGNED,
 	PRIMARY KEY (row_id)
@@ -15,13 +16,14 @@ CREATE TABLE merge (
 
 DELIMITER //
 
-CREATE PROCEDURE sp_I_new_merge
+CREATE PROCEDURE sp_I_new_log
 (	IN p_ip VARCHAR(39),
+	IN p_operation VARCHAR(50),
 	IN p_file_size BIGINT UNSIGNED,
 	IN p_num_files INT UNSIGNED
 )
 BEGIN
-	INSERT INTO merge(ip, merge_time_utc, file_size, num_files) VALUES (p_ip, NOW(), p_file_size, p_num_files);
+	INSERT INTO log(ip, event_time_utc, operation, file_size, num_files) VALUES (p_ip, NOW(), p_operation, p_file_size, p_num_files);
 END//
 
 DELIMITER ;
