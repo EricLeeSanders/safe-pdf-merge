@@ -337,6 +337,14 @@ function validateSplits(pdfSplitHelper, fileSplits, file, next, maxFileSize, res
                     if (parseInt(numbers[2], 10) > numPages) {
                         numbers[2] = numPages;
                     }
+                    // If a page input is 0 or less 
+                    // then we change the number to 1
+                    if (parseInt(numbers[1], 10) <= 0) {
+                        numbers[1] = 1;
+                    }
+                    if (parseInt(numbers[2], 10) <= 0) {
+                        numbers[2] = 1;
+                    }
 
                     // Get the total page count for each split and add to the total
                     totalPageCount += Math.abs(numbers[2] - numbers[1]) + 1;
@@ -445,22 +453,22 @@ app.use(function(error, req, res, next) {
     }
 });
 
-// app.listen(process.env.PORT, process.env.IP, function() {
-//     console.log('Server is listening...');
-// });
+app.listen(process.env.PORT, process.env.IP, function() {
+    console.log('Server is listening...');
+});
 
-http.createServer(function(req, res) {
-    res.writeHead(301, {
-        "Location": "https://" + req.headers['host'] + req.url
-    });
-    res.end();
-}).listen(80);
+// http.createServer(function(req, res) {
+//     res.writeHead(301, {
+//         "Location": "https://" + req.headers['host'] + req.url
+//     });
+//     res.end();
+// }).listen(80);
 
-var options = {
-    ca: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.ca-bundle'),
-    key: fs.readFileSync(__dirname + '/ssl/safe-pdf-merge-ssl.pem'),
-    cert: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.crt')
-};
+// var options = {
+//     ca: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.ca-bundle'),
+//     key: fs.readFileSync(__dirname + '/ssl/safe-pdf-merge-ssl.pem'),
+//     cert: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.crt')
+// };
 
-var httpsServer = https.createServer(options, app);
-httpsServer.listen(443);
+// var httpsServer = https.createServer(options, app);
+// httpsServer.listen(443);

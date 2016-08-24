@@ -135,9 +135,6 @@
         if (formData) {
             createAjaxRequest(formData, fileName)
         }
-        else {
-            console.log('Something is wrong with the form data');
-        }
     });
 
     function createAjaxRequest(formData, fileName) {
@@ -159,7 +156,8 @@
                 else if (data.status == 413) {
                     $('.progress-bar').html('Size of PDFs created exceeds the limit.');
                     alert("Size of PDFs created exceeds the limit.");
-                } else {
+                }
+                else {
                     $('.progress-bar').html('Error processing the request.');
                     alert("Error processing the request.");
                 }

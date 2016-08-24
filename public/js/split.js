@@ -80,14 +80,10 @@ var Split = (function() {
         var splits = [];
         $('.split-pages').each(function() {
             var list = $(this).val();
-            console.log(list);
             list = list.replace(/ /g, '');
-            console.log(list);
             var matches = [];
             matches = list.match(/\d+-\d+/g);
             if (matches) {
-                console.log("matches: " + matches);
-                console.log(matches.length);
                 splits.push(matches);
             }
         });
@@ -132,9 +128,7 @@ var Split = (function() {
         if (splits.length <= 0) {
             return alert('Must enter the pages that are to be included in the new pdf');
         }
-        console.log('splits length: ' + splits.length);
         splits.forEach(function(split) {
-            console.log(split);
             formData.append('splits', split)
         });
 
@@ -145,7 +139,6 @@ var Split = (function() {
             if (!fileName) {
                 fileName = 'split_document_' + count;
             }
-            console.log(fileName);
             formData.append('splitFileNames', fileName)
         });
 
