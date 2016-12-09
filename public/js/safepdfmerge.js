@@ -85,6 +85,7 @@
         $('#clickInput').click();
     });
 
+    // Stop propagation so clicks on pdf items do not open the file drop
     $('#items').on('click', 'li > .pdf-div', function(e) {
         e.stopPropagation();
     });
@@ -136,7 +137,7 @@
             createAjaxRequest(formData, fileName)
         }
     });
-
+    
     function createAjaxRequest(formData, fileName) {
         $.ajax({
             url: './upload',
@@ -145,6 +146,12 @@
             processData: false,
             contentType: false,
             success: function(data) {
+                var dataType;
+                if(data.type === 'zip'){
+                    dataType = 'application/zip';
+                } else {
+                    dataType = 'application/pdf';
+                }
                 window.location = '/download?name=' + fileName + '&type=' + data.type + '&uuid=' + data.uuid;
                 $('.progress-bar').html('Done!');
             },

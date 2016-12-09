@@ -70,22 +70,28 @@ app.get('/download', function(req, res, next) {
     // Make sure that there is a file name and it is valid
     if (fileName) {
         fileName = sanitize(fileName);
-    }
-    else {
+    } else {
         fileName = 'pdf_document';
     }
 
-    res.download(__dirname + '/files/' + req.query.uuid + '.' + req.query.type, fileName + '.' + req.query.type, function(error) {
-        if (error) {
-            logger.error(error);
-            if (!res.headersSent) {
-                res.redirect('/');
-            }
-            return;
+    if (!res.headersSent) {
+        if(req.query.type == 'zip'){
+            res.contentType('application/zip');
+        } else {
+            res.contentType('application/pdf');
         }
-        // Remove the file after it is downloaded
-        removeFile(__dirname + '/files/' + req.query.uuid + '.' + req.query.type);
-    });
+        res.download(__dirname + '/files/' + req.query.uuid + '.' + req.query.type, fileName + '.' + req.query.type, function(error) {
+            if (error) {
+                logger.error(error);
+                if (!res.headersSent) {
+                    res.redirect('/');
+                }
+                return;
+            }
+            // Remove the file after it is downloaded
+            removeFile(__dirname + '/files/' + req.query.uuid + '.' + req.query.type);
+        });
+    }
 
 });
 
@@ -111,6 +117,7 @@ app.post('/upload', bruteforce.prevent, function(req, res, next) {
     var splits = [];
     var error = false;
     var type;
+    var splitAll = false;
     var splitFileNames = [];
     // Called for each file upload
     busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
@@ -152,6 +159,8 @@ app.post('/upload', bruteforce.prevent, function(req, res, next) {
         }
         else if (fieldname === 'splitFileNames') {
             splitFileNames.push(val);
+        } else if (fieldname === 'splitAll') {
+            splitAll = val;
         }
     });
 
@@ -163,7 +172,7 @@ app.post('/upload', bruteforce.prevent, function(req, res, next) {
                 merge(files, req, res, next);
             }
             else if (type === 'split') {
-                split(splits, splitFileNames, files[0], req, res, next, maxFileSize);
+                split(splits, splitFileNames, splitAll, files[0], req, res, next, maxFileSize);
             }
         }
         else {
@@ -233,19 +242,23 @@ function merge(files, req, res, next) {
 /**
  * Begins the process of splitting a PDF.
  **/
-function split(splits, splitFileNames, file, req, res, next, maxFileSize) {
+function split(splits, splitFileNames, splitAll, file, req, res, next, maxFileSize) {
     var pdfSplitHelper = new PDFSplit(file);
-    validateSplits(pdfSplitHelper, splits, file, next, maxFileSize, res, splitPDF.bind(this, file, splitFileNames, pdfSplitHelper, req, res, next));
+    validateSplits(pdfSplitHelper, splits, file, next, maxFileSize, res, splitPDF.bind(this, file, splitFileNames, splitAll, pdfSplitHelper, req, res, next));
 }
 
 /**
  * Calls the PDFSplit to split a pdf. 
  * Determines wether the PDF(s) should be zipped or not.
  **/
-function splitPDF(file, splitFileNames, pdfSplitHelper, req, res, next, splits) {
+function splitPDF(file, splitFileNames, splitAll, pdfSplitHelper, req, res, next, splits) {
     var randName;
     var randFilePaths = [];
     logger.info('Splitting: ' + file);
+
+    if(splitAll === "true"){
+        splits = createSplitsForAllPages(splits, splitFileNames, next);
+    }
     for (var i = 0, remaining = splits.length; i < splits.length; i++) {
         randName = uuid.v4();
         randFilePaths.push(__dirname + '/files/' + randName + '.pdf');
@@ -313,7 +326,7 @@ function validateSplits(pdfSplitHelper, fileSplits, file, next, maxFileSize, res
             fileSplits.forEach(function(splits) {
                 splits = splits.replace(/ /g, ''); //remove whitespace
 
-                // Get all of the splits for a fil
+                // Get all of the splits for a file
                 // ex 4-7,11-18
                 var matches = splits.match(/\d+-\d+/g);
                 if (!matches) {
@@ -378,6 +391,42 @@ function validateSplits(pdfSplitHelper, fileSplits, file, next, maxFileSize, res
 }
 
 /**
+ * Creates splits for all pages if splitAll is true
+ **/
+ function createSplitsForAllPages(fileSplits, splitFileNames, next){
+    logger.info("Creating splits for all pages");
+    // use the first filename as the filename
+    // the array should only have one element in it
+    var fileName = splitFileNames[0];
+    splitFileNames.splice(0, splitFileNames.length);
+    
+    var parsedSplits = [];
+    // Parse each individual split
+    // only get the first file split.
+    // fileSplits should only have one element in it
+    fileSplits[0].forEach(function(split) {
+        
+        // Get each individual split
+        // ex 4-7
+        var numbers = split.match(/(\d+)-(\d+)/);
+
+        if(parseInt(numbers[1]) > parseInt(numbers[2])){
+            var tmp = numbers[2];
+            numbers[2] = numbers[1];
+            numbers[1] = tmp;
+        }
+        
+        for(var i = parseInt(numbers[1]); i <= parseInt(numbers[2]); i++){
+            var strSplit = i + '-' + i;
+            parsedSplits.push(strSplit);
+            splitFileNames.push(fileName ? fileName + "-" + i : i);
+        }
+    });
+
+    return parsedSplits;
+ }
+
+/**
  *  Zips multiple PDFs
  **/
 function zipSplits(splitFileNames, filePaths, req, res, next) {
@@ -389,6 +438,7 @@ function zipSplits(splitFileNames, filePaths, req, res, next) {
                 if (!splitFileNames[i]) {
                     splitFileNames[i] = 'split_document_' + (i + 1);
                 }
+                splitFileNames[i] = sanitize(splitFileNames[i]);
                 zip.file(splitFileNames[i] + '.pdf', buffer, {
                     binary: true
                 });
@@ -435,9 +485,8 @@ function getBytesExpected(headers) {
     else if (headers['transfer-encoding'] == null) {
         return 0;
     }
-    else {
-        return null;
-    }
+    
+    return null;
 }
 
 /**
@@ -453,22 +502,22 @@ app.use(function(error, req, res, next) {
     }
 });
 
-// app.listen(process.env.PORT, process.env.IP, function() {
-//     console.log('Server is listening...');
-// });
+app.listen(process.env.PORT, process.env.IP, function() {
+    console.log('Server is listening...');
+});
 
-http.createServer(function(req, res) {
-    res.writeHead(301, {
-        "Location": "https://" + req.headers['host'] + req.url
-    });
-    res.end();
-}).listen(80);
+// http.createServer(function(req, res) {
+//     res.writeHead(301, {
+//         "Location": "https://" + req.headers['host'] + req.url
+//     });
+//     res.end();
+// }).listen(80);
 
-var options = {
-    ca: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.ca-bundle'),
-    key: fs.readFileSync(__dirname + '/ssl/safe-pdf-merge-ssl.pem'),
-    cert: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.crt')
-};
+// var options = {
+//     ca: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.ca-bundle'),
+//     key: fs.readFileSync(__dirname + '/ssl/safe-pdf-merge-ssl.pem'),
+//     cert: fs.readFileSync(__dirname + '/ssl/www_safepdfmerge_com.crt')
+// };
 
-var httpsServer = https.createServer(options, app);
-httpsServer.listen(443);
+// var httpsServer = https.createServer(options, app);
+// httpsServer.listen(443);

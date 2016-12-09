@@ -2,6 +2,7 @@ var Split = (function() {
     $('#items').on('click', 'li > .pdf-div > .remove-pdf-image', function(e) {
         e.stopPropagation();
         $(this).parent().parent().remove();
+        //If the only split is removed, close the split area
         if ($('#items').children().length < 1) {
             $('#pdf-list').toggleClass('pdf-list-active pdf-list-inactive');
             $('#usedMb').text('');
@@ -12,6 +13,7 @@ var Split = (function() {
             $('.progress-bar').width('0%');
             $('#merge-name').val('');
             $('#add-split').css('display', 'none');
+            $('#splitAllPages').css('visibility', 'hidden');
         }
     });
 
@@ -20,8 +22,22 @@ var Split = (function() {
         $('#file-name').text('');
         $('#file-name').css('width', '0');
         $('#add-split').css('display', 'none');
+        $('#splitAllPages').css('visibility', 'hidden');
     });
 
+    $('#splitAllPages').click(function(event) {
+        if($("#cboxSplitAll").is(':checked')){
+            $('#add-split').css('display', 'none');
+            if ($('#items').children().length > 1) {
+                $("#items > li ~ li").remove();
+            }
+        } else {
+            $('#add-split').css('display', 'block');
+        }
+        event.stopPropagation();
+    });
+    
+ 
 
     $('#add-split').click(function(event) {
         event.stopPropagation();
@@ -98,7 +114,6 @@ var Split = (function() {
             var divTimeout = setTimeout(function() {
                 $('.pdf-div').css('display', 'inline-block');
                 $('.split-input-div').css('display', 'inline-block');
-                $('#add-split').css('display', 'block');
             }, 900);
             var lblTime = 1000;
         }
@@ -112,6 +127,13 @@ var Split = (function() {
             $('#file-name').css('width', '300px');
             $('.split-file-name').css('width', '300px');
             $('.split-pages').css('width', '300px');
+            $('#splitAllPages').css('visibility', 'visible');
+            
+            if($("#cboxSplitAll").is(':checked')){
+                $('#add-split').css('display', 'hidden');
+            } else {
+                $('#add-split').css('display', 'block');
+            }
         }, lblTime);
     }
 
@@ -123,6 +145,8 @@ var Split = (function() {
         }
         formData.append('upload', file, file.name);
         formData.append('type', 'split');
+        var splitAllPages = $("#cboxSplitAll").is(':checked');
+        formData.append('splitAll', splitAllPages);
 
         var splits = parseSplitInput();
         if (splits.length <= 0) {
@@ -137,7 +161,10 @@ var Split = (function() {
             count++;
             var fileName = $(this).val();
             if (!fileName) {
-                fileName = 'split_document_' + count;
+                fileName = file.name.match(/[^.]*/);
+                if(!splitAllPages){
+                    fileName += "_" + count;
+                }
             }
             formData.append('splitFileNames', fileName)
         });

@@ -49,6 +49,14 @@
     transition: width 1s, height 1s, margin 1s;
 }
 
+#splitAllPages {
+    text-align: left;
+    margin-top: 15px;
+    margin-left: 10px;
+    visibility:hidden;
+    
+}
+
 #add-split {
     padding-left: 10px;
     display: none;

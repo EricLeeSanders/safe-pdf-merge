@@ -11,6 +11,10 @@ body {
     margin: 0;
 }
 
+p{
+    margin: 0;
+}
+
 input[type="text"] {
     border: 1px solid #CB0606;
     font-size: 17px;
@@ -54,6 +58,10 @@ input[type="button"] {
 
 input[type="button"]::-moz-focus-inner {
     border: 0;
+}
+
+input[type=checkbox] {
+  transform: scale(1.5);
 }
 
 a,
