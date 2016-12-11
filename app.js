@@ -198,17 +198,13 @@ function removeFiles(files, next) {
  **/
 function removeFile(file, next) {
     logger.info('Removing file: ' + file);
-    //check if the file exists first. fs.exists is deprecated
-    fs.stat(file, function(error, stats) {
+    fs.unlink(file, function(error) {
         if (error) {
-            return next(error);
+            // Not a critical error, so don't throw it
+            logger.error("Error removing file: " + error)
+            return;
         }
-        fs.unlink(file, function(error) {
-            if (error) {
-                return next(error);
-            }
-            logger.info(file + ': deleted successfully');
-        });
+        logger.info(file + ': deleted successfully');
     });
 }
 
