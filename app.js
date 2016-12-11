@@ -323,8 +323,8 @@ function validateSplits(pdfSplitHelper, fileSplits, file, next, maxFileSize, res
                 splits = splits.replace(/ /g, ''); //remove whitespace
 
                 // Get all of the splits for a file
-                // ex 4-7,11-18
-                var matches = splits.match(/\d+-\d+/g);
+                // ex 1,4-7,11-18
+                var matches = splits.match(/(\d+)([-]\d+)?/g);
                 if (!matches) {
                     return next(new Error('Error parsing the split inputs.'));
                 }
@@ -334,8 +334,14 @@ function validateSplits(pdfSplitHelper, fileSplits, file, next, maxFileSize, res
                 matches.forEach(function(split) {
                     split = split.replace(/ /g, ''); //remvoe whitespace
 
+                    // if the split is just 1 number then change it to a correct split
+                    // ex: 7 -> 7-7
+                    if(split.length === 1){
+                        split += "-" + split;
+                    }
+                    
                     // Get each individual split
-                    // ex 4-7
+                    // more info: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/exec
                     var numbers = split.match(/(\d+)-(\d+)/);
 
                     // If a page input is greater than the number of pages

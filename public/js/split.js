@@ -98,7 +98,7 @@ var Split = (function() {
             var list = $(this).val();
             list = list.replace(/ /g, '');
             var matches = [];
-            matches = list.match(/\d+-\d+/g);
+            matches = list.match(/(\d+)([-]\d+)?/g);
             if (matches) {
                 splits.push(matches);
             }
