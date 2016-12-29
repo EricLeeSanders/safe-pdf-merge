@@ -202,20 +202,6 @@ input:focus {
     transition: width .6s ease;
 }
 
-#usedMb {
-    vertical-align: middle;
-    display: inline-block;
-    width: 0px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-    text-align: middle;
-    -webkit-transition: width 1s, height 1s, margin 1s;
-    -moz-transition: width 1s, height 1s, margin 1s;
-    -ms-transition: width 1s, height 1s, margin 1s;
-    transition: width 1s, height 1s, margin 1s;
-}
-
 #pdf-list {
     vertical-align: top;
     color: #333;
@@ -245,6 +231,7 @@ input:focus {
     padding-left: 10px;
     list-style-type: none;
     text-align: left;
+    display:block;
 }
 
 .pdf-div {
@@ -252,13 +239,8 @@ input:focus {
     margin: 5px 0;
 }
 
-.pdf-div:hover .remove-pdf-image {
-    display: inline-block;
-}
-
 .remove-pdf-image {
     vertical-align: middle;
-    display: none;
     height: 32px;
 }
 
@@ -296,8 +278,4 @@ footer {
     position: absolute;
     left: 0;
     top: 10px;
-}
-
-#test-div {
-    display: inline-block;
 }

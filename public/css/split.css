@@ -5,7 +5,6 @@
 }
 
 .split-file-name {
-    vertical-align: middle;
     display: block;
     width: 0px;
     text-overflow: ellipsis;
@@ -21,7 +20,6 @@
 }
 
 .split-pages {
-    vertical-align: middle;
     display: block;
     width: 0px;
     text-overflow: ellipsis;
@@ -42,7 +40,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
-    text-align: middle;
+    text-align: center;
     -webkit-transition: width 1s, height 1s, margin 1s;
     -moz-transition: width 1s, height 1s, margin 1s;
     -ms-transition: width 1s, height 1s, margin 1s;
@@ -51,14 +49,23 @@
 
 #splitAllPages {
     text-align: left;
-    margin-top: 15px;
+    margin-top: 25px;
     margin-left: 10px;
     visibility:hidden;
-    
 }
 
 #add-split {
-    padding-left: 10px;
     display: none;
+    float: left;
+}
+
+#add-split-img {
+    padding-left: 35px;
+    margin-right: 10px;
     height: 48px;
+    vertical-align: middle;
+}
+
+.remove-pdf-image {
+    display: inline-block;
 }

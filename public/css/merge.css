@@ -1,3 +1,4 @@
+
 .custom-file-upload {
     vertical-align: middle;
     display: inline-block;
@@ -13,7 +14,41 @@
     transition: width 1s, height 1s, margin 1s;
 }
 
-#mergeName {
-    width: 200px;
+#usedMb {
+    height: 25px;
+    vertical-align: middle;
     display: inline-block;
+    width: 0px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    text-align: center;
+    -webkit-transition: width 1s, height 1s, margin 1s;
+    -moz-transition: width 1s, height 1s, margin 1s;
+    -ms-transition: width 1s, height 1s, margin 1s;
+    transition: width 1s, height 1s, margin 1s;
+}
+
+#sortInstructions {
+    height: 25px;
+    margin-bottom: 7px;
+    text-align: left;
+    display:block;
+    width: 0px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    -webkit-transition: width 1s, height 1s, margin 1s;
+    -moz-transition: width 1s, height 1s, margin 1s;
+    -ms-transition: width 1s, height 1s, margin 1s;
+    transition: width 1s, height 1s, margin 1s;
+}
+
+
+.pdf-div:hover .remove-pdf-image {
+    display: inline-block;
+}
+
+.remove-pdf-image {
+    display: none;
 }
