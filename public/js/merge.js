@@ -1,6 +1,8 @@
 var Merge = (function() {
+    
     Sortable.create(items, {
-        group: 'sorting',
+        group: 'pdf-items',
+        animation: 300,
         sort: true
     });
 
@@ -8,12 +10,7 @@ var Merge = (function() {
         e.stopPropagation();
         $(this).parent().parent().remove();
         if ($('#items').children().length < 1) {
-            $('#pdf-list').toggleClass('pdf-list-active pdf-list-inactive');
-            $('#usedMb').text('');
-            $('#usedMb').css('width', '0');
-            $('.progress-bar').text('');
-            $('.progress-bar').width('0%');
-            $('#merge-name').val('');
+            $('#btn-clear').click();
         }
         else {
             var queuedFiles = getQueuedFiles();
@@ -32,6 +29,10 @@ var Merge = (function() {
     $('#btn-clear').click(function(event) {
         event.stopPropagation();
         $('#merge-name').val('');
+        $('#usedMb').text('');
+        $('#usedMb').css('width', '0');
+        $('#sortInstructions').text('');
+        $('#sortInstructions').css('width', '0');
     });
 
     function addMergeInputs(addedFiles) {
@@ -84,6 +85,8 @@ var Merge = (function() {
             $('.pdf-div').css('display', 'inline-block');
             $('.custom-file-upload').css('width', '300px');
             $('#usedMb').css('width', '300px');
+            $('#sortInstructions').css('width', '300px');
+            $('#sortInstructions').text('- Click and drag to sort PDFs');
         }, lblTime);
     }
 

@@ -1,6 +1,7 @@
 (function() {
     var maxFileSize = 1024 * 1024 * 20;
 
+
     function addFile(event) {
         $('.progress-bar').text('');
         $('.progress-bar').width('0%');
@@ -95,8 +96,6 @@
         if ($('#pdf-list').is('.pdf-list-active')) {
             $('#pdf-list').toggleClass('pdf-list-active pdf-list-inactive');
         }
-        $('#usedMb').text('');
-        $('#usedMb').css('width', '0');
         $('.progress-bar').text('');
         $('.progress-bar').width('0%');
         $('#items').children().remove();
