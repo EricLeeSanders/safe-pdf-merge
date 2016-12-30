@@ -7,7 +7,7 @@ var http = require('http');
 var downloadRoutes = require('./routes/download.js')
 var uploadRoutes = require('./routes/upload.js')
 var purge = require('./lib/purge');
-
+var fs = require('fs');
 
 app.use(express.static(path.join(__dirname, 'public')));
 
