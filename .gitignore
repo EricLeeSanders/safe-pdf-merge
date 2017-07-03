@@ -8,3 +8,5 @@ npm-debug.log*
 /files
 /uploads
 /node_modules
+/ssl
+/lib/config.js
