@@ -8,8 +8,7 @@
         var addedFiles;
         if (event.dataTransfer) {
             addedFiles = event.dataTransfer.files;
-        }
-        else if (event.target) {
+        } else if (event.target) {
             addedFiles = event.target.files;
         }
 
@@ -32,8 +31,7 @@
                 //If we are adding a file(s) for the first time
                 firstTime = true;
                 $('#pdf-list').toggleClass('pdf-list-active pdf-list-inactive');
-            }
-            else {
+            } else {
                 //If we are splitting and adding a new file where 
                 //there already is a current file, then we remove
                 //the current file
@@ -49,8 +47,7 @@
                 $('#file-name').data('file', addedFiles.item(0));
                 Split.addSplitInput();
                 Split.showSplitInput(firstTime);
-            }
-            else if ($('body').hasClass('merge-pdf')) {
+            } else if ($('body').hasClass('merge-pdf')) {
                 Merge.addMergeInputs(addedFiles);
                 Merge.showMergeInputs(firstTime);
             }
@@ -115,16 +112,13 @@
             //the zip file.
             if ($('.split-file-name').length === 1) {
                 fileName = $('.split-file-name').val();
-            }
-            else {
+            } else {
                 fileName = 'pdf_documents';
             }
-        }
-        else if ($('body').hasClass('merge-pdf')) {
+        } else if ($('body').hasClass('merge-pdf')) {
             formData = Merge.createFormData();
             fileName = $('#merge-name').val();
-        }
-        else {
+        } else {
             return;
         }
 
@@ -136,7 +130,7 @@
             createAjaxRequest(formData, fileName)
         }
     });
-    
+
     function createAjaxRequest(formData, fileName) {
         $.ajax({
             url: './upload',
@@ -146,7 +140,7 @@
             contentType: false,
             success: function(data) {
                 var dataType;
-                if(data.type === 'zip'){
+                if (data.type === 'zip') {
                     dataType = 'application/zip';
                 } else {
                     dataType = 'application/pdf';
@@ -158,12 +152,10 @@
                 if (data.status == 429) {
                     $('.progress-bar').html('Too many requests! Please wait.');
                     alert("Too many requests! Please wait.");
-                }
-                else if (data.status == 413) {
+                } else if (data.status == 413) {
                     $('.progress-bar').html('Size of PDFs created exceeds the limit.');
                     alert("Size of PDFs created exceeds the limit.");
-                }
-                else {
+                } else {
                     $('.progress-bar').html('Error processing the request.');
                     alert("Error processing the request.");
                 }

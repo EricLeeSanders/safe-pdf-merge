@@ -14,8 +14,7 @@ var FileValidation = (function() {
             if (file.type != 'application/pdf') {
                 alert('File is not a PDF!')
                 return false;
-            }
-            else if (file.size > maxFileSize) {
+            } else if (file.size > maxFileSize) {
                 alert('File size too large! Limit is: ' + (maxFileSize / (1024 * 1024)) + ' mb');
                 return false;
             }

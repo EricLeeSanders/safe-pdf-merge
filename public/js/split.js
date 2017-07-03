@@ -7,7 +7,7 @@ var Split = (function() {
         //If the only split is removed, close the split area
         if ($('#items').children().length < 1) {
             $('#btn-clear').click();
-        } 
+        }
     });
 
     $('#btn-clear').click(function(event) {
@@ -24,7 +24,7 @@ var Split = (function() {
 
 
     $('#splitAllPages').click(function(event) {
-        if($("#cboxSplitAll").is(':checked')){
+        if ($("#cboxSplitAll").is(':checked')) {
             $('#add-split').css('display', 'none');
             if ($('#items').children().length > 1) {
                 $("#items > li ~ li").remove();
@@ -40,7 +40,7 @@ var Split = (function() {
         addSplitInput();
         showSplitInput(false);
     });
-    
+
     function addSplitInput() {
         var pdf_li = $('<li />');
         $('#items').append(pdf_li);
@@ -49,7 +49,7 @@ var Split = (function() {
             class: 'pdf-div',
         });
         $(pdf_li).append(pdf_div);
-        
+
         var remove_pdf_img = $('<img />', {
             class: 'remove-pdf-image',
             src: 'images/pdf_remove.png',
@@ -112,8 +112,7 @@ var Split = (function() {
                 $('.split-input-div').css('display', 'inline-block');
             }, 900);
             var lblTime = 1000;
-        }
-        else {
+        } else {
             $('.pdf-div').css('display', 'inline-block');
             $('.split-input-div').css('display', 'inline-block');
             var lblTime = 10;
@@ -124,12 +123,12 @@ var Split = (function() {
             $('.split-pages').css('width', '300px');
             $('#splitAllPages').css('visibility', 'visible');
 
-            if($("#cboxSplitAll").is(':checked')){
+            if ($("#cboxSplitAll").is(':checked')) {
                 $('#add-split').css('display', 'hidden');
             } else {
                 $('#add-split').css('display', 'block');
             }
-            
+
         }, lblTime);
     }
 
@@ -143,10 +142,10 @@ var Split = (function() {
         formData.append('type', 'split');
         var splitAllPages = $("#cboxSplitAll").is(':checked');
         formData.append('splitAll', splitAllPages);
-        
+
         var splits = parseSplitInput();
         if (splits.length <= 0) {
-            if($("#cboxSplitAll").is(':checked')){
+            if ($("#cboxSplitAll").is(':checked')) {
                 return alert('Must enter the pages that are to be split into new pdf files.\nExample: 1, 5-10 will create 7 new pdf files for the given input.');
             } else {
                 return alert('Must enter the pages that are to be included in the new pdf.\nExample: 1, 5-10 will create a new pdf file with pages 1 and 5 through 10.');
@@ -162,7 +161,7 @@ var Split = (function() {
             var fileName = $(this).val();
             if (!fileName) {
                 fileName = file.name.match(/[^.]*/);
-                if(!splitAllPages){
+                if (!splitAllPages) {
                     fileName += "_" + count;
                 }
             }

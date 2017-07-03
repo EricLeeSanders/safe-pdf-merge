@@ -1,5 +1,5 @@
 var express = require("express");
-var router  = express.Router();
+var router = express.Router();
 var logger = require('../lib/logger');
 var validator = require('validator');
 var sanitize = require('sanitize-filename');
@@ -28,7 +28,7 @@ router.get('/download', function(req, res, next) {
     }
 
     if (!res.headersSent) {
-        if(req.query.type == 'zip'){
+        if (req.query.type == 'zip') {
             res.contentType('application/zip');
         } else {
             res.contentType('application/pdf');

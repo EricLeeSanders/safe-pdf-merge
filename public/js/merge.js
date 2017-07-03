@@ -1,5 +1,5 @@
 var Merge = (function() {
-    
+
     Sortable.create(items, {
         group: 'pdf-items',
         animation: 300,
@@ -11,8 +11,7 @@ var Merge = (function() {
         $(this).parent().parent().remove();
         if ($('#items').children().length < 1) {
             $('#btn-clear').click();
-        }
-        else {
+        } else {
             var queuedFiles = getQueuedFiles();
             var totalFileSize = FileValidation.calcTotalFileSize(queuedFiles)
             var totalFileSizeMb = totalFileSize / (1024 * 1024)
@@ -76,8 +75,7 @@ var Merge = (function() {
                 $('.pdf-div').css('display', 'inline-block');
             }, 200);
             var lblTime = 1000;
-        }
-        else {
+        } else {
             $('.pdf-div').css('display', 'inline-block');
             var lblTime = 10;
         }
