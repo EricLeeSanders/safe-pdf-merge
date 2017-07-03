@@ -1,6 +1,5 @@
-
 var express = require("express");
-var router  = express.Router();
+var router = express.Router();
 var expressBrute = require('express-brute');
 var logger = require('../lib/logger');
 var util = require('../lib/util');
@@ -88,11 +87,9 @@ router.post('/upload', bruteforce.prevent, function(req, res, next) {
     busboy.on('field', function(fieldname, val, fieldnameTruncated, valTruncated) {
         if (fieldname === 'type') {
             type = val;
-        }
-        else if (fieldname === 'splits') {
+        } else if (fieldname === 'splits') {
             splits.push(val);
-        }
-        else if (fieldname === 'splitFileNames') {
+        } else if (fieldname === 'splitFileNames') {
             splitFileNames.push(val);
         } else if (fieldname === 'splitAll') {
             splitAll = val;
@@ -105,12 +102,10 @@ router.post('/upload', bruteforce.prevent, function(req, res, next) {
         if (files.length > 0) {
             if (type === 'merge') {
                 mergeModule.merge(files, req, res, next);
-            }
-            else if (type === 'split') {
+            } else if (type === 'split') {
                 splitModule.split(splits, splitFileNames, splitAll, files[0], req, res, next, maxFileSize);
             }
-        }
-        else {
+        } else {
             return next(new Error('No Files...'));
         }
     });
@@ -124,11 +119,10 @@ function getBytesExpected(headers) {
     var contentLength = headers['content-length'];
     if (contentLength) {
         return parseInt(contentLength, 10);
-    }
-    else if (headers['transfer-encoding'] == null) {
+    } else if (headers['transfer-encoding'] == null) {
         return 0;
     }
-    
+
     return null;
 }
 
