@@ -27,3 +27,9 @@ BEGIN
 END//
 
 DELIMITER ;
+
+CREATE USER 'safe_pdf_merge'@'localhost' IDENTIFIED BY '[password]';
+
+GRANT USAGE ON *.* TO `safe_pdf_merge`@`localhost`;
+GRANT INSERT ON `safe_pdf_merge`.`log` TO `safe_pdf_merge`@`localhost`;
+GRANT EXECUTE ON PROCEDURE `safe_pdf_merge`.`sp_i_new_log` TO `safe_pdf_merge`@`localhost`;
